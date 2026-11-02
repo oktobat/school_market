@@ -18,7 +18,7 @@ const App = () => {
         {/* 인증 관련 라우트 */}
         <Route path="/login" element={<LoginPage setIsLoggedIn={setIsLoggedIn} />} />
         <Route path="/signup" element={<SignupPage setIsLoggedIn={setIsLoggedIn} />} />
-        <Route path="/mypage/edit" element={<ProfileEditPage />} />
+        <Route path="/mypage/edit" element={<ProfileEditPage setIsLoggedIn={setIsLoggedIn} />} />
         <Route path="/write" element={<ProductCreatePage />} />
       </Route>
     </Routes>

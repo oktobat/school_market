@@ -2,13 +2,12 @@ import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 
-const ProfileEditPage = () => {
+const ProfileEditPage = ({ setIsLoggedIn }) => {
   const navigate = useNavigate();
 
   const [profile, setProfile] = useState({
     email: '',
-    currentPassword: '', // 사용자가 입력하는 비밀번호
-    dbPassword: '',      // DB에서 가져온 기존 비밀번호 (비교용)
+    currentPassword: '', // 본인 확인용 입력 비밀번호
     nickname: '',
     phone_number: '',
     entry_year: '',
@@ -16,53 +15,59 @@ const ProfileEditPage = () => {
   });
 
   const [loading, setLoading] = useState(true);
+  
+  // 💡 모달 open 여부 및 입력받을 비밀번호 상태 추가
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [withdrawPassword, setWithdrawPassword] = useState('');
+
 
   // 1. 기존 프로필 정보 불러오기 (GET /api/users/me)
   useEffect(() => {
-  const fetchProfile = async () => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-      alert('로그인이 필요한 서비스입니다.');
-      navigate('/login');
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/users/me', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      // 💡 404/500/502 에러 시 json() 실패로 인한 Crash 예방
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        alert(errorData?.message || `요청 실패 (상태 코드: ${response.status})`);
+    const fetchProfile = async () => {
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        alert('로그인이 필요한 서비스입니다.');
+        navigate('/login');
         return;
       }
 
-      const data = await response.json();
-      setProfile((prev) => ({
-        ...prev,
-        email: data.email || '',
-        dbPassword: data.password || '',
-        nickname: data.nickname || '',
-        phone_number: data.phone_number || '',
-        entry_year: data.entry_year || '',
-        student_id: data.student_id || '',
-      }));
-    } catch (error) {
-      console.error('프로필 조회 오류:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      try {
+        const response = await fetch('/api/users/me', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-  fetchProfile();
-}, [navigate]);
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => null);
+          alert(errorData?.message || `요청 실패 (상태 코드: ${response.status})`);
+          return;
+        }
 
-  // 입력값 변경 핸들러
+        const data = await response.json();
+        setProfile((prev) => ({
+          ...prev,
+          email: data.email || '',
+          nickname: data.nickname || '',
+          phone_number: data.phone_number || '',
+          entry_year: data.entry_year || '',
+          student_id: data.student_id || '',
+        }));
+      } catch (error) {
+        console.error('프로필 조회 오류:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [navigate]);
+
+  // 비밀번호 입력 여부 확인 (공백 제외 유효성)
+  const isPasswordEntered = profile.currentPassword.trim() !== '';
+
+    // 입력값 변경 핸들러
   const handleChange = (e) => {
     const { name, value } = e.target;
     setProfile((prev) => ({
@@ -71,16 +76,12 @@ const ProfileEditPage = () => {
     }));
   };
 
-  // 비밀번호 일치 여부 확인 (DB 비밀번호가 평문이거나 암호화 비교를 프론트에서 단순 체크할 때)
-  // 💡 백엔드가 암호화된 비밀번호를 반환하지 않는 경우, 입력값이 존재하는지 여부로 체크할 수 있습니다.
-  const isPasswordMatch = profile.currentPassword !== '' && profile.currentPassword === profile.dbPassword;
-
   // 2. 프로필 수정 저장 제출 (PUT /api/users/me)
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!isPasswordMatch) {
-      alert('비밀번호가 일치하지 않습니다.');
+    if (!isPasswordEntered) {
+      alert('현재 비밀번호를 입력해 주세요.');
       return;
     }
 
@@ -112,6 +113,43 @@ const ProfileEditPage = () => {
     } catch (error) {
       console.error('프로필 수정 오류:', error);
       alert('서버 통신 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 탈퇴 진행 처리 (모달 안에서 최종 제출 버튼 클릭 시)
+  const handleConfirmWithdrawal = async (e) => {
+    e.preventDefault();
+
+    if (!withdrawPassword.trim()) {
+      alert('비밀번호를 입력해 주세요.');
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+
+    try {
+      const response = await fetch('/api/users/me', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ password: withdrawPassword }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('회원 탈퇴가 성공적으로 완료되었습니다.');
+        localStorage.clear();
+        setIsLoggedIn(false);
+        navigate('/', { replace: true });
+      } else {
+        alert(data.message || '탈퇴 처리에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('회원 탈퇴 오류:', error);
+      alert('서버와 통신 중 오류가 발생했습니다.');
     }
   };
 
@@ -184,16 +222,51 @@ const ProfileEditPage = () => {
             placeholder="현재 비밀번호를 입력하세요"
             required
           />
-          {profile.currentPassword && !isPasswordMatch && (
-            <ErrorMessage>비밀번호가 일치하지 않습니다.</ErrorMessage>
-          )}
         </FormGroup>
 
-        {/* 비밀번호가 일치할 때만 버튼 활성화 */}
-        <SubmitButton type="submit" disabled={!isPasswordMatch}>
+        {/* 비밀번호가 입력되면 저장 버튼 활성화 */}
+        <SubmitButton type="submit" disabled={!isPasswordEntered}>
           수정사항 저장
         </SubmitButton>
       </Form>
+
+      {/* 회원 탈퇴 트리거 버튼 */}
+    <WithdrawalSection>
+      <WithdrawalButton type="button" onClick={() => setIsModalOpen(true)}>
+        회원 탈퇴
+      </WithdrawalButton>
+    </WithdrawalSection>
+
+    {/* 💡 회원 탈퇴 비밀번호 확인 모달 */}
+    {isModalOpen && (
+      <ModalOverlay onClick={() => setIsModalOpen(false)}>
+        <ModalContent onClick={(e) => e.stopPropagation()}>
+          <ModalTitle>회원 탈퇴 확인</ModalTitle>
+          <ModalDescription>
+            정말로 탈퇴하시겠습니까?<br />
+            본인 확인을 위해 현재 비밀번호를 입력해 주세요.
+          </ModalDescription>
+
+          <ModalForm onSubmit={handleConfirmWithdrawal}>
+            <Input
+              type="password"
+              placeholder="비밀번호 입력"
+              value={withdrawPassword}
+              onChange={(e) => setWithdrawPassword(e.target.value)}
+              required
+            />
+            <ModalButtonGroup>
+              <CancelButton type="button" onClick={() => setIsModalOpen(false)}>
+                취소
+              </CancelButton>
+              <ConfirmWithdrawButton type="submit">
+                탈퇴하기
+              </ConfirmWithdrawButton>
+            </ModalButtonGroup>
+          </ModalForm>
+        </ModalContent>
+      </ModalOverlay>
+    )}
     </Container>
   );
 };
@@ -268,12 +341,6 @@ const DisabledInput = styled.input`
   cursor: not-allowed;
 `;
 
-const ErrorMessage = styled.span`
-  font-size: 12px;
-  color: #e03131;
-  margin-top: 2px;
-`;
-
 const SubmitButton = styled.button`
   padding: 14px;
   background-color: ${(props) => (props.disabled ? '#ced4da' : '#FF6F0F')};
@@ -288,5 +355,100 @@ const SubmitButton = styled.button`
 
   &:hover {
     background-color: ${(props) => (props.disabled ? '#ced4da' : '#e55e00')};
+  }
+`;
+
+const WithdrawalSection = styled.div`
+  margin-top: 36px;
+  padding-top: 20px;
+  border-top: 1px solid #f1f3f5;
+  text-align: center;
+`;
+
+const WithdrawalButton = styled.button`
+  background: none;
+  border: none;
+  color: #adb5bd;
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+
+  &:hover {
+    color: #e03131;
+  }
+`;
+
+/* 모달 오버레이 (배경 어둡게) */
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+`;
+
+const ModalContent = styled.div`
+  background: #ffffff;
+  padding: 24px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 360px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+`;
+
+const ModalTitle = styled.h3`
+  font-size: 18px;
+  font-weight: bold;
+  color: #212529;
+  margin-bottom: 10px;
+`;
+
+const ModalDescription = styled.p`
+  font-size: 13px;
+  color: #495057;
+  line-height: 1.5;
+  margin-bottom: 16px;
+`;
+
+const ModalForm = styled.form`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+`;
+
+const ModalButtonGroup = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+`;
+
+const CancelButton = styled.button`
+  padding: 8px 14px;
+  background: #e9ecef;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #495057;
+  cursor: pointer;
+`;
+
+const ConfirmWithdrawButton = styled.button`
+  padding: 8px 14px;
+  background: #e03131;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+
+  &:hover {
+    background: #c92a2a;
   }
 `;
