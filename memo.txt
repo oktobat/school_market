@@ -177,8 +177,11 @@ CREATE TABLE products (
     location VARCHAR(100) NOT NULL,              -- 교내 거래 장소 ('1층 중앙현관', '체육관앞' 등)
     image_url VARCHAR(255),                      -- 상품 이미지 경로/URL
     seller_id INT NOT NULL,                      -- 판매자 ID (users 테이블 참조)
+    buyer_id INT DEFAULT NULL,                   -- 💡 구매자 ID (구매 확정 전까지 NULL, users 테이블 참조)
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 게시글 등록일자
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    -- 외래키 설정: 작성자가 삭제되면 작성글 처리 방침 설정 (CASCADE)
-    FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
+    -- 외래키 설정(판매자): 작성자가 삭제되면 작성글 처리 방침 설정 (CASCADE)
+    FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE,
+    -- 외래키 설정(구매자): 구매자 탈퇴 시에도 상품 레코드는 유지하고 구매자 ID만 NULL로 변경 (SET NULL)
+    FOREIGN KEY (buyer_id) REFERENCES users(id) ON DELETE SET NULL
 );
