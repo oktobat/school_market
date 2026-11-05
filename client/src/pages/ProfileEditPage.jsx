@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const ProfileEditPage = ({ setIsLoggedIn }) => {
   const navigate = useNavigate();
 
   const [profile, setProfile] = useState({
     email: '',
-    currentPassword: '', // 본인 확인용 입력 비밀번호
+    currentPassword: '',
     nickname: '',
     phone_number: '',
     entry_year: '',
@@ -15,13 +16,10 @@ const ProfileEditPage = ({ setIsLoggedIn }) => {
   });
 
   const [loading, setLoading] = useState(true);
-  
-  // 💡 모달 open 여부 및 입력받을 비밀번호 상태 추가
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [withdrawPassword, setWithdrawPassword] = useState('');
 
-
-  // 1. 기존 프로필 정보 불러오기 (GET /api/users/me)
+  // 1. 프로필 정보 불러오기 (GET /api/users/me)
   useEffect(() => {
     const fetchProfile = async () => {
       const token = localStorage.getItem('token');
@@ -33,19 +31,14 @@ const ProfileEditPage = ({ setIsLoggedIn }) => {
       }
 
       try {
-        const response = await fetch('/api/users/me', {
+        const response = await axios.get('/api/users/me', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => null);
-          alert(errorData?.message || `요청 실패 (상태 코드: ${response.status})`);
-          return;
-        }
-
-        const data = await response.json();
+        // axios는 response.data에 JSON 결과가 들어옵니다. (response.json() 불필요)
+        const data = response.data;
         setProfile((prev) => ({
           ...prev,
           email: data.email || '',
@@ -56,6 +49,9 @@ const ProfileEditPage = ({ setIsLoggedIn }) => {
         }));
       } catch (error) {
         console.error('프로필 조회 오류:', error);
+        // axios 에러 처리: 서버에서 내려준 에러 메시지가 있다면 출력
+        const errorMessage = error.response?.data?.message || '프로필을 불러오는 데 실패했습니다.';
+        alert(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -64,10 +60,8 @@ const ProfileEditPage = ({ setIsLoggedIn }) => {
     fetchProfile();
   }, [navigate]);
 
-  // 비밀번호 입력 여부 확인 (공백 제외 유효성)
   const isPasswordEntered = profile.currentPassword.trim() !== '';
 
-    // 입력값 변경 핸들러
   const handleChange = (e) => {
     const { name, value } = e.target;
     setProfile((prev) => ({
@@ -88,35 +82,32 @@ const ProfileEditPage = ({ setIsLoggedIn }) => {
     const token = localStorage.getItem('token');
 
     try {
-      const response = await fetch('/api/users/me', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
+      // response.data로 바로 확인 가능하며, 성공 시 200대 응답이 오므로 별도 response.ok 검사 불필요
+      await axios.put(
+        '/api/users/me',
+        {
           currentPassword: profile.currentPassword,
           nickname: profile.nickname,
           phone_number: profile.phone_number,
           student_id: profile.student_id,
-        }),
-      });
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-      const data = await response.json();
-
-      if (response.ok) {
-        alert('프로필 정보가 성공적으로 수정되었습니다!');
-        navigate('/');
-      } else {
-        alert(data.message || '수정에 실패했습니다.');
-      }
+      alert('프로필 정보가 성공적으로 수정되었습니다!');
+      navigate('/');
     } catch (error) {
       console.error('프로필 수정 오류:', error);
-      alert('서버 통신 중 오류가 발생했습니다.');
+      const errorMessage = error.response?.data?.message || '수정에 실패했습니다.';
+      alert(errorMessage);
     }
   };
 
-  // 탈퇴 진행 처리 (모달 안에서 최종 제출 버튼 클릭 시)
+  // 3. 회원 탈퇴 처리 (DELETE /api/users/me)
   const handleConfirmWithdrawal = async (e) => {
     e.preventDefault();
 
@@ -128,28 +119,24 @@ const ProfileEditPage = ({ setIsLoggedIn }) => {
     const token = localStorage.getItem('token');
 
     try {
-      const response = await fetch('/api/users/me', {
-        method: 'DELETE',
+      // axios.delete는 Body 데이터를 넣으려면 { data: { ... } } 형태로 Config 객체 안에 전달해야 함
+      await axios.delete('/api/users/me', {
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ password: withdrawPassword }),
+        data: {
+          password: withdrawPassword,
+        },
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        alert('회원 탈퇴가 성공적으로 완료되었습니다.');
-        localStorage.clear();
-        setIsLoggedIn(false);
-        navigate('/', { replace: true });
-      } else {
-        alert(data.message || '탈퇴 처리에 실패했습니다.');
-      }
+      alert('회원 탈퇴가 성공적으로 완료되었습니다.');
+      localStorage.clear();
+      setIsLoggedIn(false);
+      navigate('/', { replace: true });
     } catch (error) {
       console.error('회원 탈퇴 오류:', error);
-      alert('서버와 통신 중 오류가 발생했습니다.');
+      const errorMessage = error.response?.data?.message || '탈퇴 처리에 실패했습니다.';
+      alert(errorMessage);
     }
   };
 

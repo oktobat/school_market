@@ -1,55 +1,45 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
-
-// DB products 테이블 기준 샘플 데이터
-const INITIAL_PRODUCTS = [
-  {
-    id: 1,
-    title: '모듈형 컴퓨터구조 교재 급처합니다',
-    price: 8000,
-    type: 'SELL',
-    category: '서적',
-    status: 'SELLING',
-    location: '3층 홈베이스',
-    image_url: 'https://via.placeholder.com/150',
-    created_at: '10분 전'
-  },
-  {
-    id: 2,
-    title: '체육복 상의 (L사이즈) 무료나눔',
-    price: 0,
-    type: 'FREE',
-    category: '교복',
-    status: 'SELLING',
-    location: '매점 앞',
-    image_url: 'https://via.placeholder.com/150',
-    created_at: '1시간 전'
-  },
-  {
-    id: 3,
-    title: '공학용 계산기 (FX-570EX)',
-    price: 15000,
-    type: 'SELL',
-    category: '학용품',
-    status: 'RESERVED',
-    location: '1층 중앙현관',
-    image_url: 'https://via.placeholder.com/150',
-    created_at: '3시간 전'
-  }
-];
+import axios from 'axios';
 
 const CATEGORIES = ['전체', '서적', '교복', '학용품', '기타'];
 
 const Home = () => {
   const navigate = useNavigate();
-  const [products] = useState(INITIAL_PRODUCTS);
+  // 1. 초기 상태를 빈 배열([])로 설정
+  const [products, setProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('전체');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // 카테고리 필터링
+  // 2. 컴포넌트 마운트 시 백엔드 API(DB) 데이터 불러오기
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        // GET /api/products 연동
+        const response = await axios.get('/api/products');
+        setProducts(response.data);
+      } catch (err) {
+        console.error('상품 목록 불러오기 실패:', err);
+        setError('상품 목록을 불러오는 중 오류가 발생했습니다.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  // 3. 카테고리 필터링
   const filteredProducts = selectedCategory === '전체'
     ? products
     : products.filter(item => item.category === selectedCategory);
+
+  // 로딩 및 에러 예외 처리
+  if (loading) return <StateMessage>상품 목록을 불러오는 중...</StateMessage>;
+  if (error) return <StateMessage style={{ color: '#e74c3c' }}>{error}</StateMessage>;
 
   return (
     <HomeContainer>
@@ -68,37 +58,45 @@ const Home = () => {
 
       {/* 2. 게시글 목록 영역 */}
       <ProductList>
-        {filteredProducts.map((product) => (
-          <ProductCard 
-            key={product.id} 
-            onClick={() => navigate(`/product/${product.id}`)}
-          >
-            <Thumbnail src={product.image_url} alt={product.title} />
+        {filteredProducts.length === 0 ? (
+          <StateMessage>등록된 상품이 없습니다.</StateMessage>
+        ) : (
+          filteredProducts.map((product) => (
+            <ProductCard 
+              key={product.id} 
+              onClick={() => navigate(`/product/${product.id}`)}
+            >
+              <Thumbnail 
+                src={product.image_url || 'https://via.placeholder.com/150'} 
+                alt={product.title} 
+              />
 
-            <InfoArea>
-              <Title>{product.title}</Title>
-              
-              <Meta>
-                <LocationTag>📍 {product.location}</LocationTag>
-                <Dot>•</Dot>
-                <span>{product.created_at}</span>
-              </Meta>
-
-              <PriceRow>
-                {product.status === 'RESERVED' && <Badge $type="reserved">예약중</Badge>}
-                {product.status === 'COMPLETED' && <Badge $type="completed">거래완료</Badge>}
+              <InfoArea>
+                <Title>{product.title}</Title>
                 
-                <Price>
-                  {product.type === 'FREE' || product.price === 0 ? (
-                    <FreeText>무료나눔 🎁</FreeText>
-                  ) : (
-                    `${product.price.toLocaleString()}원`
-                  )}
-                </Price>
-              </PriceRow>
-            </InfoArea>
-          </ProductCard>
-        ))}
+                <Meta>
+                  <LocationTag>📍 {product.location}</LocationTag>
+                  <Dot>•</Dot>
+                  {/* DB TIMESTAMP를 날짜 문자열로 변환 */}
+                  <span>{new Date(product.created_at).toLocaleDateString()}</span>
+                </Meta>
+
+                <PriceRow>
+                  {product.status === 'RESERVED' && <Badge $type="reserved">예약중</Badge>}
+                  {product.status === 'COMPLETED' && <Badge $type="completed">거래완료</Badge>}
+                  
+                  <Price>
+                    {product.type === 'FREE' || Number(product.price) === 0 ? (
+                      <FreeText>무료나눔 🎁</FreeText>
+                    ) : (
+                      `${Number(product.price).toLocaleString()}원`
+                    )}
+                  </Price>
+                </PriceRow>
+              </InfoArea>
+            </ProductCard>
+          ))
+        )}
       </ProductList>
     </HomeContainer>
   );
@@ -106,7 +104,9 @@ const Home = () => {
 
 export default Home;
 
-// 🎨 styled-components 정의
+/* ==========================================================================
+   🎨 기존 styled-components 스타일 유지
+   ========================================================================== */
 
 const HomeContainer = styled.div`
   width: 100%;
@@ -225,4 +225,12 @@ const Badge = styled.span`
   font-weight: 600;
   color: #fff;
   background-color: ${props => (props.$type === 'reserved' ? '#2b8a3e' : '#868e96')};
+`;
+
+/* 추가된 메시지 UI 스타일 */
+const StateMessage = styled.div`
+  text-align: center;
+  padding: 40px 16px;
+  color: #868e96;
+  font-size: 14px;
 `;
