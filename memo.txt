@@ -146,9 +146,6 @@ export default pool;
 *** 내 로컬 코드로 원격 저장소 강제 업데이트하기
     git push -u origin main --force
 
-*** 컴퓨터 바꿔서 작업할 때는 pull 한 후에 작업할것. 작업을 마친 후에는 바로 위의 내용으로 반드시 push 할것
-    git pull origin main
-
 4. 프로젝트 진행하기
 (1) 프로젝트에 필요한 기능들을 정의(기획)하고 데이터 구조 설계
 1단계: 핵심 기능 및 요구사항 정리 (기획)
