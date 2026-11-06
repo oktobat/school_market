@@ -139,6 +139,10 @@ export default pool;
     git commit -m "Feat: 수정내용"
     git push origin main
 
+*** 다른 사람 코드를 clone 해서 연습하다가, 다시 원래 코드나 최신 코드 강제로 갖고 오기
+    git fetch origin
+    git reset --hard origin/main
+
 *** 컴퓨터 바꿔서 작업할 때는 pull 한 후에 작업할것. 작업을 마친 후에는 바로 위의 내용으로 반드시 push 할것
     git pull origin main
 
