@@ -139,7 +139,7 @@ export default pool;
     git commit -m "Feat: 수정내용"
     git push origin main
 
-*** 다른 사람 코드를 clone 해서 연습하다가, 다시 원래 코드나 최신 코드 강제로 갖고 오기
+*** 코드를 clone 해서 작업하다가, 깃에 있는 최신 코드로 강제 업데이트하기
     git fetch origin
     git reset --hard origin/main
 
