@@ -116,6 +116,13 @@ const ProfileEditPage = ({ setIsLoggedIn }) => {
       return;
     }
 
+    // 💡탈퇴 동의 확인창 띄우기 (취소 선택 시 함수 종료)
+    const isConfirmed = window.confirm('정말로 회원 탈퇴를 진행하시겠습니까?\n탈퇴 시 작성한 게시글 및 계정 정보 복구가 불가능합니다.');
+
+    if (!isConfirmed) {
+      return; // 사용자가 '취소'를 누르면 요청을 보내지 않고 중단
+    }
+
     const token = localStorage.getItem('token');
 
     try {

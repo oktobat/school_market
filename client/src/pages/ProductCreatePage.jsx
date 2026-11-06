@@ -57,12 +57,22 @@ export default function ProductCreatePage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // 💡 localStorage에서 로그인한 유저의 ID 가져오기
+    const sellerId = localStorage.getItem('userId');
+
+    if (!sellerId) {
+      alert('로그인이 필요한 서비스입니다.');
+      navigate('/login');
+      return;
+    }
+
     if (!formData.title.trim() || !formData.description.trim() || !formData.location.trim()) {
       alert('필수 입력 항목을 모두 확인해 주세요.');
       return;
     }
 
     try {
+      // loading 상태일때 제출 버튼을 비활성화하여 이중 클릭 방지
       setLoading(true);
 
       // 파일 업로드를 위한 FormData 객체 생성
@@ -73,25 +83,20 @@ export default function ProductCreatePage() {
       uploadData.append('price', formData.price);
       uploadData.append('location', formData.location);
       uploadData.append('description', formData.description);
+      uploadData.append('sellerId', sellerId);
 
       // 파일이 선택된 경우에만 'image' 파라미터로 추가
       if (imageFile) {
         uploadData.append('image', imageFile);
       }
-
-      // multipart/form-data 헤더 설정 후 POST 전송
-      await axios.post('/api/products', uploadData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        withCredentials: true,
-      });
+      
+      await axios.post('/api/products', uploadData);
 
       alert('상품이 성공적으로 등록되었습니다!');
       navigate('/', { replace: true });
-    } catch (err) {
-      console.error('상품 등록 실패:', err);
-      alert(err.response?.data?.message || '상품 등록 중 오류가 발생했습니다.');
+    } catch (error) {
+      console.error('상품 등록 실패:', error);
+      alert(error.response?.data?.message || '상품 등록 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }

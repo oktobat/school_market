@@ -1,7 +1,27 @@
 import express from 'express';
 import db from '../db.js';
+import multer from 'multer';
+import path from 'path';
 
 const router = express.Router();
+
+// 1. Multer 저장소 설정
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+    cb(null, uniqueName);
+  },
+});
+
+// 2. Multer 미들웨어 객체 생성
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB 용량 제한
+});
 
 // 1. 전체 상품 목록 조회 (비로그인 사용자도 가능)
 // GET /api/products
@@ -58,8 +78,11 @@ router.get('/:id', async (req, res) => {
 
 // 3. 새 상품 등록 (로그인 회원 전용 - 작성 시 user_id 외래키 연결)
 // POST /api/products
-router.post('/', async (req, res) => {
-  const { user_id, title, description, price, type, category, location } = req.body;
+router.post('/', upload.single('image'), async (req, res) => {
+  const { title, type, category, price, location, description, sellerId } = req.body;
+
+  // req.file 존재 여부에 따른 이미지 경로 설정 (템플릿 리터럴 활용)
+  const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
   if (!user_id || !title || !category || !location) {
     return res.status(400).json({ message: '필수 상품 정보를 입력해 주세요.' });
@@ -70,9 +93,9 @@ router.post('/', async (req, res) => {
 
   try {
     const [result] = await db.query(
-      `INSERT INTO products (user_id, title, description, price, type, category, location)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [user_id, title, description, finalPrice, type || 'SELL', category, location]
+      `INSERT INTO products (title, type, category, price, location, description, seller_id, image_url)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [title, type || 'SELL', category, finalPrice, location, description, sellerId]
     );
 
     return res.status(201).json({

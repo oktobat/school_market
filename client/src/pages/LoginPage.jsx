@@ -1,6 +1,7 @@
 import {useState} from 'react'
 import styled from 'styled-components';
 import { useNavigate, useLocation, useOutletContext } from 'react-router-dom';
+import axios from 'axios'
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -16,32 +17,30 @@ const LoginPage = () => {
     e.preventDefault();
 
     try {
-      const response = await fetch('/api/users/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        localStorage.setItem('token', data.token);
-        setIsLoggedIn(true); // 전역 로그인 상태 변경
-        alert('로그인되었습니다.');
-        navigate(redirectTo);
-      } else {
-        // 💡 1. 백엔드 응답 메시지에 '등록' 또는 '존재하지' 않는 회원이라는 문구가 포함되어 있거나 
-        // 💡 2. 특정 status(예: 404)일 때 회원가입 페이지로 이동 처리
-        if (response.status === 404 || data.message?.includes('등록') || data.message?.includes('존재')) {
-          alert('등록된 회원이 없습니다. 회원가입 페이지로 이동합니다.');
-          navigate('/signup'); // 👈 회원가입 라우트 경로로 이동
-        } else {
-          alert(data.message || '로그인 실패');
-        }
-      }
+      const response = await axios.post('/api/users/login', { email, password });
+      const {token, user} = response.data;
+      // 💡localStorage에 토큰 및 유저 정보(ID, 닉네임 등) 저장
+      localStorage.setItem('token', token);
+      localStorage.setItem('userId', user.id);
+      localStorage.setItem('userNickname', user.nickname);
+      setIsLoggedIn(true); // 전역 로그인 상태 변경
+      alert('로그인되었습니다.');
+      navigate(redirectTo);
     } catch (error) {
       console.error('로그인 에러:', error);
-      alert('서버 통신 중 에러가 발생했습니다.');
+      // Axios 에러 처리 (응답 상태코드 및 백엔드 메시지 확인)
+      if (error.response) {
+        const { status, data } = error.response;
+
+        if (status === 404 || data.message?.includes('등록') || data.message?.includes('존재')) {
+          alert('등록된 회원이 없습니다. 회원가입 페이지로 이동합니다.');
+          navigate('/signup');
+        } else {
+          alert(data.message || '로그인에 실패했습니다.');
+        }
+      } else {
+        alert('서버 통신 중 에러가 발생했습니다.');
+      }
     }
   };
 

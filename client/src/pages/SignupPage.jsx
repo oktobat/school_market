@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import styled from 'styled-components';
 import { useNavigate, useLocation } from 'react-router-dom';
+import axios from 'axios'
 
 const SignupPage = ({ setIsLoggedIn }) => {
   const location = useLocation();
@@ -28,24 +29,27 @@ const SignupPage = ({ setIsLoggedIn }) => {
     e.preventDefault();
 
     try {
-      const response = await fetch('/api/users/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
+      // 💡 [수정] formData 객체 전체를 백엔드로 전달
+      const response = await axios.post('/api/users/signup', formData);
 
-      const data = await response.json();
-
-      if (response.ok) {
-        localStorage.setItem('token', data.token);
-        setIsLoggedIn(true);
-        alert('회원가입이 완료되어 자동으로 로그인되었습니다!');
+      // 💡 백엔드 응답(response.data)에서 token과 user 정보 추출
+      const { token, user, message } = response.data;
+      if (token && user) {
+        localStorage.setItem('token', token);
+        localStorage.setItem('userId', user.id);
+        localStorage.setItem('userNickname', user.nickname);
+        
+        if (setIsLoggedIn) setIsLoggedIn(true);
+        alert(message || '회원가입이 완료되어 자동으로 로그인되었습니다!');
         navigate(redirectPath);
       } else {
-        alert(data.message || '회원가입 실패');
+        // 토큰이 응답에 없다면 바로 로그인 페이지로 이동
+        alert(message || '회원가입이 완료되었습니다.');
+        navigate('/login');
       }
     } catch (error) {
       console.error('회원가입 오류:', error);
+      alert(error.response?.data?.message || '회원가입 실패');
     }
   };
 
