@@ -38,7 +38,7 @@ router.get('/', async (req, res) => {
 
   try {
     let query = `
-      SELECT p.id, p.title, p.price, p.type, p.category, p.status, p.location, p.created_at, u.nickname AS seller_nickname
+      SELECT p.id, p.title, p.price, p.type, p.category, p.status, p.location, p.created_at, u.nickname AS seller_nickname, p.image_url
       FROM products p
       JOIN users u ON p.seller_id = u.id
     `;

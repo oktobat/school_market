@@ -67,7 +67,7 @@ const Home = () => {
               onClick={() => navigate(`/product/${product.id}`)}
             >
               <Thumbnail 
-                src={product.image_url || 'https://via.placeholder.com/150'} 
+                src={ product.image_url? product.image_url : 'https://via.placeholder.com/150'}
                 alt={product.title} 
               />
 
