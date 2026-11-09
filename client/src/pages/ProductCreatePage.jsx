@@ -59,7 +59,7 @@ export default function ProductCreatePage() {
 
     // 💡 localStorage에서 로그인한 유저의 ID 가져오기
     const sellerId = localStorage.getItem('userId');
-
+    console.log(sellerId)
     if (!sellerId) {
       alert('로그인이 필요한 서비스입니다.');
       navigate('/login');
@@ -90,8 +90,12 @@ export default function ProductCreatePage() {
         uploadData.append('image', imageFile);
       }
       
-      await axios.post('/api/products', uploadData);
-
+      const response = await axios.post('/api/products', uploadData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      console.log("등록성공:", response.data);
       alert('상품이 성공적으로 등록되었습니다!');
       navigate('/', { replace: true });
     } catch (error) {
