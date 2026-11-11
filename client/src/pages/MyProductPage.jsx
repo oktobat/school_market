@@ -55,8 +55,8 @@ export default function MyProductsPage({ currentUserId }) {
           {products.map((item) => (
             <Card key={item.id} onClick={() => navigate(`/product/${item.id}`)}>
               <ImageWrapper>
-                {item.imageUrl ? (
-                  <ProductImage src={item.imageUrl} alt={item.title} />
+                {item.image_url ? (
+                  <ProductImage src={item.image_url} alt={item.title} />
                 ) : (
                   <NoImage>이미지 없음</NoImage>
                 )}
@@ -72,7 +72,7 @@ export default function MyProductsPage({ currentUserId }) {
                     ? '무료나눔'
                     : `${Number(item.price)?.toLocaleString()}원`}
                 </PriceText>
-                <LocationText>📍 {item.location}</LocationText>
+                <LocationText>📍 {item.location} (판매시기 학번 : {item.student_id})</LocationText>
               </CardContent>
             </Card>
           ))}

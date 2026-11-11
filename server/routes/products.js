@@ -199,20 +199,7 @@ router.get('/user/:userId', async (req, res) => {
   try {
     // 2. 해당 사용자가 등록한 상품을 최신순(ORDER BY id DESC)으로 조회
     const [rows] = await db.query(
-      `SELECT 
-         id, 
-         title, 
-         type, 
-         category, 
-         price, 
-         location, 
-         description, 
-         image_url AS imageUrl, 
-         seller_id AS sellerId, 
-         created_at
-       FROM products 
-       WHERE seller_id = ?
-       ORDER BY id DESC`,
+      `SELECT p.*, u.student_id FROM products p JOIN users u ON p.seller_id = u.id WHERE p.seller_id = ? ORDER BY p.id DESC`,
       [Number(userId)]
     );
 
