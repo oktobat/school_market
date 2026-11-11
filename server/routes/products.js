@@ -68,7 +68,7 @@ router.get('/:id', async (req, res) => {
     const [rows] = await db.query(
       `SELECT p.*, u.nickname AS seller_nickname, u.student_id AS seller_student_id
        FROM products p
-       JOIN users u ON p.user_id = u.id
+       JOIN users u ON p.seller_id = u.id
        WHERE p.id = ?`,
       [id]
     );
@@ -114,6 +114,117 @@ router.post('/', upload.single('image'), async (req, res) => {
   } catch (error) {
     console.error('상품 등록 에러:', error);
     return res.status(500).json({ message: '서버 에러가 발생했습니다.' });
+  }
+});
+
+// PUT /api/products/:id (상품 정보 수정)
+router.put('/:id', upload.single('image'), async (req, res) => {
+  const { id } = req.params;
+  const { title, type, category, price, location, description } = req.body;
+
+  try {
+    // 1. 기존 이미지 유지 또는 새 파일 주소 반영
+    let imageUrlSql = '';
+    const queryParams = [title, type, category, price, location, description];
+
+    if (req.file) {
+      const imageUrl = `/uploads/${req.file.filename}`;
+      imageUrlSql = `, image_url = ?`;
+      queryParams.push(imageUrl);
+    }
+
+    queryParams.push(id);
+
+    // 2. DB 업데이트
+    const [result] = await db.query(
+      `UPDATE products 
+       SET title = ?, type = ?, category = ?, price = ?, location = ?, description = ? ${imageUrlSql}
+       WHERE id = ?`,
+      queryParams
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: '상품을 찾을 수 없습니다.' });
+    }
+
+    res.json({ message: '상품이 성공적으로 수정되었습니다.' });
+  } catch (error) {
+    console.error('❌ 상품 수정 DB 오류:', error);
+    res.status(500).json({ message: '서버 에러가 발생했습니다.' });
+  }
+});
+
+// DELETE /api/products/:id (상품 삭제)
+router.delete('/:id', async (req, res) => {
+  const { id } = req.params;
+
+  // 1. 유효하지 않은 id 파라미터 방어
+  if (!id || id === 'undefined' || isNaN(Number(id))) {
+    return res.status(400).json({ message: '유효하지 않은 상품 ID입니다.' });
+  }
+
+  try {
+    // 2. DB에서 해당 상품 삭제
+    const [result] = await db.query(
+      `DELETE FROM products WHERE id = ?`,
+      [Number(id)]
+    );
+
+    // 3. 삭제 대상 레코드가 없는 경우 (이미 삭제되었거나 존재하지 않는 ID)
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: '존재하지 않거나 이미 삭제된 상품입니다.' });
+    }
+
+    // 4. 삭제 성공 응답
+    res.status(200).json({ message: '상품이 성공적으로 삭제되었습니다.' });
+  } catch (error) {
+    console.error('❌ 상품 삭제 DB 오류:', error.sqlMessage || error);
+    res.status(500).json({ 
+      message: '서버 오류로 인해 상품 삭제에 실패했습니다.', 
+      error: error.sqlMessage || error.message 
+    });
+  }
+});
+
+
+// GET /api/products/user/:userId (특정 사용자가 등록한 상품 목록 조회)
+router.get('/user/:userId', async (req, res) => {
+  const { userId } = req.params;
+
+  // 1. userId 파라미터 유효성 검사 (NaN 또는 null/undefined 체크)
+  if (!userId || userId === 'undefined' || isNaN(Number(userId))) {
+    return res.status(400).json({ message: '유효하지 않은 사용자 ID입니다.' });
+  }
+
+  try {
+    // 2. 해당 사용자가 등록한 상품을 최신순(ORDER BY id DESC)으로 조회
+    const [rows] = await db.query(
+      `SELECT 
+         id, 
+         title, 
+         type, 
+         category, 
+         price, 
+         location, 
+         description, 
+         image_url AS imageUrl, 
+         seller_id AS sellerId, 
+         created_at
+       FROM products 
+       WHERE seller_id = ?
+       ORDER BY id DESC`,
+      [Number(userId)]
+    );
+
+    // 3. 등록한 상품이 없으면 빈 배열([]) 반환
+    res.json(rows);
+  } catch (error) {
+    // 📌 백엔드 터미널에 에러 상세 출력
+    console.error('❌ 내 판매 상품 목록 조회 DB 오류:', error.sqlMessage || error);
+    res.status(500).json({ 
+      message: '내가 등록한 상품 목록을 불러오는 중 서버 오류가 발생했습니다.', 
+      error: error.sqlMessage || error.message 
+    });
   }
 });
 

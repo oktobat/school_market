@@ -63,7 +63,7 @@ const Header = ({ isLoggedIn, setIsLoggedIn }) => {
                 <MenuItem onClick={() => handleMenuClick('/mypage/edit')}>
                   프로필 수정
                 </MenuItem>
-                <MenuItem onClick={() => handleMenuClick('/mypage/sales')}>
+                <MenuItem onClick={() => handleMenuClick('/mypage/products')}>
                   판매내역
                 </MenuItem>
                 <MenuItem onClick={() => handleMenuClick('/mypage/buys')}>
