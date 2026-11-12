@@ -42,7 +42,6 @@ export default function MyProductsPage({ currentUserId }) {
     <Container>
       <HeaderBar>
         <Title>내가 판매 중인 상품 ({products.length})</Title>
-        <BackButton onClick={() => navigate(-1)}>← 뒤로가기</BackButton>
       </HeaderBar>
 
       {products.length === 0 ? (
@@ -113,17 +112,6 @@ const Title = styled.h2`
   font-weight: 700;
   color: #212529;
   margin: 0;
-`;
-
-const BackButton = styled.button`
-  background: none;
-  border: none;
-  color: #495057;
-  font-size: 14px;
-  cursor: pointer;
-  &:hover {
-    color: #212529;
-  }
 `;
 
 const EmptyState = styled.div`

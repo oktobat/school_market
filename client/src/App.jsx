@@ -17,23 +17,18 @@ const App = () => {
 
   return (
     <Routes>
-      <Route element={<Layout isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />}>
+      <Route element={<Layout isLoggedIn={isLoggedIn} 
+        setIsLoggedIn={setIsLoggedIn} 
+        currentUserId={currentUserId}
+        setCurrentUserId={setCurrentUserId} />}>
         <Route path="/" element={<Home />} />
         {/* 인증 관련 라우트 */}
-        <Route path="/login" element={<LoginPage setIsLoggedIn={setIsLoggedIn} setCurrentUserId={setCurrentUserId} />} />
-        <Route path="/signup" element={<SignupPage setIsLoggedIn={setIsLoggedIn} setCurrentUserId={setCurrentUserId} />} />
-        <Route path="/mypage/edit" element={<ProfileEditPage setIsLoggedIn={setIsLoggedIn} setCurrentUserId={setCurrentUserId} />} />
-        <Route 
-          path="/mypage/products" 
-          element={
-            <MyProductPage 
-              currentUserId={currentUserId || localStorage.getItem('userId')} 
-            />
-          } 
-        />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/mypage/edit" element={<ProfileEditPage />} />
+        <Route path="/mypage/products" element={<MyProductPage />} />
         <Route path="/write" element={<ProductCreatePage />} />
-        <Route path="/product/:id" element={<ProductDetailPage isLoggedIn={isLoggedIn} 
-              currentUserId={currentUserId || localStorage.getItem('userId')} />} />
+        <Route path="/product/:id" element={<ProductDetailPage />} />
         <Route path="/product/edit/:id" element={<ProductEditPage />} />
       </Route>
     </Routes>

@@ -3,13 +3,15 @@ import styled from 'styled-components';
 import Header from './components/Header';
 import Footer from './components/Footer';
 
-const Layout = ({ isLoggedIn, setIsLoggedIn }) => {
+const Layout = ({ isLoggedIn, setIsLoggedIn, currentUserId, setCurrentUserId }) => {
   return (
     <PageWrapper>
-      <Header isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
+      <Header isLoggedIn={isLoggedIn} 
+        setIsLoggedIn={setIsLoggedIn} 
+        setCurrentUserId={setCurrentUserId} />
       <MainContent>
         {/* 💡 context를 통해 하위 컴포넌트로 setIsLoggedIn 전달 */}
-        <Outlet context={{ setIsLoggedIn }} />
+        <Outlet context={{ isLoggedIn, setIsLoggedIn, currentUserId, setCurrentUserId }} />
       </MainContent>
       <Footer />
     </PageWrapper>

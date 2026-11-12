@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 
-const Header = ({ isLoggedIn, setIsLoggedIn }) => {
+const Header = ({ isLoggedIn, setIsLoggedIn, setCurrentUserId }) => {
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -32,8 +32,9 @@ const Header = ({ isLoggedIn, setIsLoggedIn }) => {
   // 로그아웃 처리
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('userId');
     setIsLoggedIn(false);
-    setIsDropdownOpen(false);
+    if (setCurrentUserId) setCurrentUserId(null); // 👈 2. App의 state도 초기화
     alert('로그아웃되었습니다.');
     navigate('/');
   };

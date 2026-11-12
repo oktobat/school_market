@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import axios from 'axios';
 import styled from 'styled-components';
 
-const ProductDetailPage = ({ isLoggedIn, currentUserId })=>{
+const ProductDetailPage = ()=>{
+  const { isLoggedIn, currentUserId } = useOutletContext();
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -64,13 +65,14 @@ const ProductDetailPage = ({ isLoggedIn, currentUserId })=>{
   const sellerId = product.seller_id;
   const sellerNickname = product.seller_nickname;
   // 💡 로그인되어 있고, 로그인한 유저 ID와 작성자 ID가 일치하는지 확인
+  console.log(parseInt(currentUserId), sellerId)
   const isSeller = Boolean(
     isLoggedIn && 
     currentUserId && 
     sellerId && 
-    String(currentUserId) === String(sellerId)
+    parseInt(currentUserId) === sellerId
   );
-
+  
   return (
     <Container>
       {/* 상단 네비게이션/액션 헤더 */}

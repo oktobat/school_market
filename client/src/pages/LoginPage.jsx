@@ -6,7 +6,7 @@ import axios from 'axios'
 const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { setIsLoggedIn } = useOutletContext(); // Layout에서 전달된 상태 변경 함수
+  const { setIsLoggedIn, setCurrentUserId } = useOutletContext(); // Layout에서 전달된 상태 변경 함수
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -21,9 +21,13 @@ const LoginPage = () => {
       const {token, user} = response.data;
       // 💡localStorage에 토큰 및 유저 정보(ID, 닉네임 등) 저장
       localStorage.setItem('token', token);
-      localStorage.setItem('userId', user.id);
+      localStorage.setItem('userId', String(user.id));
       localStorage.setItem('userNickname', user.nickname);
-      setIsLoggedIn(true); // 전역 로그인 상태 변경
+      // 2. App.jsx의 state 업데이트
+      setIsLoggedIn(true);
+      if (setCurrentUserId) {
+        setCurrentUserId(String(user.id));
+      }
       alert('로그인되었습니다.');
       navigate(redirectTo);
     } catch (error) {
