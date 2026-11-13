@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import styled from 'styled-components';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useOutletContext } from 'react-router-dom';
 import axios from 'axios'
 
-const SignupPage = ({ setIsLoggedIn }) => {
+const SignupPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-
+  const { setIsLoggedIn } = useOutletContext();
   const initialEmail = location.state?.email || '';
   const redirectPath = location.state?.redirectTo || '/';
 
@@ -38,8 +38,7 @@ const SignupPage = ({ setIsLoggedIn }) => {
         localStorage.setItem('token', token);
         localStorage.setItem('userId', user.id);
         localStorage.setItem('userNickname', user.nickname);
-        
-        if (setIsLoggedIn) setIsLoggedIn(true);
+        setIsLoggedIn(true)
         alert(message || '회원가입이 완료되어 자동으로 로그인되었습니다!');
         navigate(redirectPath);
       } else {
