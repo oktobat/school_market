@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate,useOutletContext } from 'react-router-dom';
 import axios from 'axios';
 
-const ProfileEditPage = ({ setIsLoggedIn }) => {
+const ProfileEditPage = () => {
   const navigate = useNavigate();
-
+  const { setIsLoggedIn } = useOutletContext();
   const [profile, setProfile] = useState({
     email: '',
     currentPassword: '',

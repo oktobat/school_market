@@ -2,11 +2,11 @@ import { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 
-const Header = ({ isLoggedIn, setIsLoggedIn, setCurrentUserId }) => {
+const Header = ({ isLoggedIn, setIsLoggedIn, setCurrentUserId  }) => {
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
-
+  
   // 드롭다운 바깥 영역 클릭 시 메뉴 닫기
   useEffect(() => {
     const handleClickOutside = (event) => {

@@ -6,9 +6,7 @@ import Footer from './components/Footer';
 const Layout = ({ isLoggedIn, setIsLoggedIn, currentUserId, setCurrentUserId }) => {
   return (
     <PageWrapper>
-      <Header isLoggedIn={isLoggedIn} 
-        setIsLoggedIn={setIsLoggedIn} 
-        setCurrentUserId={setCurrentUserId} />
+      <Header isLoggedIn={ isLoggedIn} setIsLoggedIn={setIsLoggedIn} setCurrentUserId={setCurrentUserId } />
       <MainContent>
         {/* 💡 context를 통해 하위 컴포넌트로 setIsLoggedIn 전달 */}
         <Outlet context={{ isLoggedIn, setIsLoggedIn, currentUserId, setCurrentUserId }} />
